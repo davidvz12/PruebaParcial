@@ -3,6 +3,7 @@ package com.example.countryinfo;
 import androidx.fragment.app.FragmentActivity;
 
 import android.gesture.OrientedBoundingBox;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
 import android.view.WindowInsetsAnimation;
@@ -14,10 +15,12 @@ import com.bumptech.glide.Glide;
 import com.example.countryinfo.Model.Geognos;
 import com.example.countryinfo.WebService.Asynchtask;
 import com.example.countryinfo.WebService.WebService;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -40,7 +43,7 @@ public class InformationMap extends FragmentActivity implements OnMapReadyCallba
     Geognos g = new Geognos();
     private Marker marker;
     LatLng myposition;
-
+    Double latLng,longitude;
     PolylineOptions lineas;
 
     @Override
@@ -62,7 +65,7 @@ public class InformationMap extends FragmentActivity implements OnMapReadyCallba
         path_fag = path_fag + bundle.getString("name") +".png";
 
         ObtenerBandera();
-
+        lineas = new PolylineOptions();
         Map<String, String> datos = new HashMap<String, String>();
         WebService ws= new WebService("http://www.geognos.com/api/en/countries/info/"+bundle.getString("name")+".json",
                 datos, InformationMap.this, InformationMap.this);
@@ -91,9 +94,6 @@ public class InformationMap extends FragmentActivity implements OnMapReadyCallba
         mMap = googleMap;
         // Add a marker in Sydney and move the camera
         myposition = new LatLng(-1.574854, -78.290045);
-        marker = mMap.addMarker(new MarkerOptions()
-                .position(myposition)
-                .title("My position").draggable(true));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(myposition));
     }
 
@@ -116,7 +116,6 @@ public class InformationMap extends FragmentActivity implements OnMapReadyCallba
             g.setNorth(jsonGeoRectangle.getString("North"));
             g.setSouth(jsonGeoRectangle.getString("South"));
 
-
             obtenerRectangle();
 
             g.setTelPref(jsonObjectPrin.getString("TelPref"));
@@ -130,18 +129,13 @@ public class InformationMap extends FragmentActivity implements OnMapReadyCallba
 
             String resp="";
 
-            resp = "Capital :" + g.getName() + "\n";
-            resp = resp + "Code tld : " + g.getTld() + "\n";
-            resp = resp + "Code iso3 : " + g.getIso3() + "\n";
-            resp = resp + "Code iso2 : " + g.getIso2() + "\n";
-            resp = resp + "Code fips : " + g.getFips() + "\n";
-            resp = resp + "Code isoN : " + g.getIsoN() + "\n";
-            resp = resp + "Code TelPref : " + g.getTelPref() + "\n";
-
-            resp = resp + "West : " + g.getWest() + "\n";
-            resp = resp + "East : " + g.getEast() + "\n";
-            resp = resp + "North : " + g.getNorth() + "\n";
-            resp = resp + "South : " + g.getSouth();
+            resp = "Capital :  " + g.getName() + "\n";
+            resp = resp + "Code tld :  " + g.getTld() + "\n";
+            resp = resp + "Code iso3 :  " + g.getIso3() + "\n";
+            resp = resp + "Code iso2 :  " + g.getIso2() + "\n";
+            resp = resp + "Code fips :  " + g.getFips() + "\n";
+            resp = resp + "Code isoN :  " + g.getIsoN() + "\n";
+            resp = resp + "Code TelPref :  " + g.getTelPref() + "\n";
 
             JSONArray JSONlista =  jsonObjectPrin.getJSONArray("GeoPt");
 
@@ -149,7 +143,17 @@ public class InformationMap extends FragmentActivity implements OnMapReadyCallba
             Double b = JSONlista.getDouble(1);
 
             myposition = new LatLng(a,b);
+            marker = mMap.addMarker(new MarkerOptions()
+                    .position(myposition)
+                    .title("My position").draggable(true));
             mMap.moveCamera(CameraUpdateFactory.newLatLng(myposition));
+            CameraPosition camPos = new CameraPosition.Builder()
+                    .target(myposition)
+                    .zoom(3)
+                    .build();
+            CameraUpdate camUpd3 =
+                    CameraUpdateFactory.newCameraPosition(camPos);
+            mMap.animateCamera(camUpd3);
 
             txtResulJSon.setText(resp);
             txtname.setText(g.getName());
@@ -161,9 +165,14 @@ public class InformationMap extends FragmentActivity implements OnMapReadyCallba
     }
 
     void obtenerRectangle(){
-        lineas = new PolylineOptions();
-
-        //lineas.add(new LatLng(latLng.latitude,latLng.longitude));
+        lineas = new PolylineOptions().
+                add( new LatLng (Double.parseDouble(g.getNorth()),Double.parseDouble(g.getWest()))).
+                add( new LatLng (Double.parseDouble(g.getNorth()),Double.parseDouble(g.getEast()))).
+                add( new LatLng (Double.parseDouble(g.getSouth()),Double.parseDouble(g.getEast()))).
+                add( new LatLng (Double.parseDouble(g.getSouth()),Double.parseDouble(g.getWest()))).
+                add( new LatLng (Double.parseDouble(g.getNorth()),Double.parseDouble(g.getWest())));
+        lineas.color(Color.RED);
+        mMap.addPolyline(lineas);
 
     }
 }
